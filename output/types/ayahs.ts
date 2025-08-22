@@ -1,0 +1,79 @@
+
+export type AyahsListResponseData = Ayah[];
+export interface AyahsListRequestParams {
+    limit?: number;
+    offset?: number;
+    ordering?: string;
+    search?: string;
+    surah_uuid?: string;
+}
+export interface AyahsCreateRequestData {
+    bismillah_text?: string;
+    is_bismillah?: boolean;
+    sajdah?: string;
+    surah_uuid: string;
+    text: string;
+}
+export interface AyahsCreateResponseData {
+    bismillah_text?: string;
+    is_bismillah?: boolean;
+    sajdah?: string;
+    surah_uuid: string;
+    text: string;
+}
+export interface AyahsRetrieveResponseData {
+    bismillah: string;
+    breakers: string;
+    mushaf: string;
+    number: number;
+    sajdah?: string;
+    surah: object;
+    text: string;
+    uuid: string;
+    words: Word[];
+}
+export interface AyahsUpdateRequestData {
+    number: number;
+    sajdah?: string;
+}
+export interface AyahsUpdateResponseData {
+    bismillah: string;
+    breakers: string;
+    number: number;
+    sajdah?: string;
+    surah: string;
+    text: string;
+    uuid: string;
+}
+export interface AyahsPartialupdateRequestData {
+    number?: number;
+    sajdah?: string;
+}
+export interface AyahsPartialupdateResponseData {
+    bismillah: string;
+    breakers: string;
+    number: number;
+    sajdah?: string;
+    surah: string;
+    text: string;
+    uuid: string;
+}
+
+
+export interface Ayah {
+    uuid: string;
+    number: number;
+    text: string;
+    bismillah?: string;
+    breakers?: string;
+    sajdah?: string;
+    surah?: string;
+}
+
+export interface AyahTranslation {
+    uuid: string;
+    text: string;
+    ayah_uuid: string;
+    translation_uuid: string;
+    bismillah?: string;
+}

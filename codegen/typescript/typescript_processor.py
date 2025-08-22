@@ -232,8 +232,13 @@ class TypeScriptProcessor:
         else:
             return "any"
 
-    def extract_properties_from_schema(self, schema) -> tuple[Dict[str, str], List[str]]:
-        """Extract properties and required fields from OpenAPI schema"""
+    def extract_properties_from_schema(self, schema, context: str = "both") -> tuple[Dict[str, str], List[str]]:
+        """Extract properties and required fields from OpenAPI schema
+        
+        Args:
+            schema: The OpenAPI schema to extract properties from
+            context: Either 'request', 'response', or 'both' to filter readonly/writeonly fields
+        """
         properties = {}
         required = []
         
@@ -262,16 +267,29 @@ class TypeScriptProcessor:
         required_fields = schema.get("required", [])
         
         for prop_name, prop_schema in schema["properties"].items():
+            # Filter properties based on readonly/writeonly and context
+            is_readonly = isinstance(prop_schema, dict) and prop_schema.get("readOnly", False)
+            is_writeonly = isinstance(prop_schema, dict) and prop_schema.get("writeOnly", False)
+            
+            # Skip readonly fields in request types
+            if context == "request" and is_readonly:
+                continue
+            
+            # Skip writeonly fields in response types  
+            if context == "response" and is_writeonly:
+                continue
+            
             prop_type = self.extract_schema_type(prop_schema)
             properties[prop_name] = prop_type
             if prop_name in required_fields:
+                # Only add to required if the field is actually included
                 required.append(prop_name)
         
         return properties, required
 
-    def create_type_definition(self, name: str, schema, description: str = None, custom_type: Optional[str] = None) -> TypeScriptTypeDefinition:
+    def create_type_definition(self, name: str, schema, description: str = None, custom_type: Optional[str] = None, context: str = "both") -> TypeScriptTypeDefinition:
         """Create a TypeScript type definition from OpenAPI schema"""
-        properties, required = self.extract_properties_from_schema(schema)
+        properties, required = self.extract_properties_from_schema(schema, context)
         
         # Check if we already have a type with the same properties
         existing_type = self._is_duplicate_type(properties, required)
@@ -310,7 +328,8 @@ class TypeScriptProcessor:
         return self.create_type_definition(
             type_name,
             json_content.schema,
-            f"Request data for {router.method} {router.path}"
+            f"Request data for {router.method} {router.path}",
+            context="request"
         )
 
     def extract_response_type(self, router: Router, controller_name: str, action_name: Optional[str] = None) -> Optional[TypeScriptTypeDefinition]:
@@ -353,7 +372,8 @@ class TypeScriptProcessor:
                 type_name,
                 {"type": "array", "items": {"type": "any"}},  # Simplified schema for array type
                 f"Response data for {router.method} {router.path}",
-                custom_type=array_type  # Use the actual array type
+                custom_type=array_type,  # Use the actual array type
+                context="response"
             )
         
         # Handle regular object responses
@@ -366,7 +386,8 @@ class TypeScriptProcessor:
         return self.create_type_definition(
             type_name,
             json_content.schema,
-            f"Response data for {router.method} {router.path}"
+            f"Response data for {router.method} {router.path}",
+            context="response"
         )
 
     def extract_params_type(self, router: Router, controller_name: str, action_name: Optional[str] = None) -> Optional[TypeScriptTypeDefinition]:
@@ -405,7 +426,8 @@ class TypeScriptProcessor:
         return self.create_type_definition(
             type_name,
             params_schema,
-            f"Query parameters for {router.method} {router.path}"
+            f"Query parameters for {router.method} {router.path}",
+            context="request"
         )
 
     def process(self) -> TypeScriptAst:
@@ -579,7 +601,8 @@ class TypeScriptProcessor:
             self.create_type_definition(
                 type_name,
                 schema_data,
-                f"Schema definition for {schema_name}"
+                f"Schema definition for {schema_name}",
+                context="both"
             )
         
         # Extract enum types from object properties
