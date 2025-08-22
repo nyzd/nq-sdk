@@ -96,7 +96,8 @@ class TypeScriptProcessor:
             return self.create_type_definition(
                 type_name,
                 action.response_schema,
-                f"Response data for action {action.name} in {controller_name}"
+                f"Response data for action {action.name} in {controller_name}",
+                context="response"
             )
         return None
 
